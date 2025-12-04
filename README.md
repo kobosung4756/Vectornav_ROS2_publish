@@ -1,6 +1,8 @@
 # Vectornav_ROS2_publish
 Gemini 3로 작성되었습니다.
 
+**참고:** https://github.com/dawonn/vectornav/tree/ros2
+
 ### ⚠️ 개발환경
 **HW:** Vectornav-100T
 
@@ -64,18 +66,17 @@ code .
 
 **▶ 내용 수정:**
 
-아래 내용을 참고하여 수정하세요.
+아래 내용(또는 `vn_100_800hz.yaml` 참고)을 참고하여 수정하세요.
 
 ```yaml
 vectornav:
   ros__parameters:
-    port: "/dev/vectornav" # UDEV Rule 수정했다면 /dev/USB0 -> /dev/vectornav
-    baud: 115200
+    port: "/dev/vectornav" # UDEV Rule 수정했다면 /dev/ttyUSB0 -> /dev/vectornav
+    baud: 921600
     reconnect_ms: 500
     
-    # Async Output Type (ASCII) - 0: OFF (Binary만 사용)
-    AsyncDataOutputType: 0           
-    AsyncDataOutputFrequency: 20
+    AsyncDataOutputType: 0      # Async Output Type (ASCII) - 0: OFF (Binary만 사용)
+    AsyncDataOutputFrequency: 1 # Not sure why this has to be 1Hz to make it work. Very strange.
 
     # ... (Sync/Comm 설정은 그대로 두세요) ...
     # ... (중략) ...
@@ -83,31 +84,17 @@ vectornav:
 
     # [중요] Binary output register 1 수정 부분
     BO1:
-      asyncMode: 3                   # ASYNCMODE_BOTH (Serial 1 & 2 출력)
+      asyncMode: 1                   # ASYNCMODE_BOTH (Serial 1 & 2 출력)
       
       # 1. 출력 속도 설정 (VN-100 내부 Loop는 800Hz)
       # 계산식: 800 / rateDivisor = 출력Hz
-      # 40 -> 4 로 변경 (800 / 4 = 200Hz)
-      rateDivisor: 40                 
-      
-      # 2. Common Group: GPS 관련 데이터 제거
-      # 0x7FFF -> 0x0001 (TimeStartup만 요청)
-      commonField: 0x0001
-      
-      # 3. Time Group: 없음
+      # 40 -> 8 로 변경 (800 / 8 = 100Hz)
+      rateDivisor: 8                 
+
+      commonField: 0x201  # ask for only bare bones IMU data
       timeField: 0x0000              
-      
-      # 4. IMU Group: 가속도, 각속도, 자기장 활성화
-      # 0x0000 -> 0x001C 
-      # (Mag:0x0004 + Accel:0x0008 + Gyro:0x0010 = 0x001C)
-      imuField: 0x001C               
-      
-      # 5. Attitude Group: 쿼터니언 활성화
-      # 0x0000 -> 0x0004 (Quaternion)
-      # Odometry에는 YPR(0x0001)보다 Quaternion이 유리함
-      attitudeField: 0x0004          
-      
-      # 6. 나머지 GPS/INS 관련 필드는 모두 0으로 유지 (VN-100은 해당 기능 없음)
+      imuField: 0x0000               
+      attitudeField: 0x0000          
       insField: 0x0000               
       gps2Field: 0x0000              
 
@@ -124,8 +111,7 @@ vectornav:
 
 vn_sensor_msgs:
   ros__parameters:
-    use_enu: true  # ROS 표준 좌표계(ENU)로 변환 (그대로 유지)
-    # 공분산 행렬은 초기값으로 두고, 추후 VIO 튜닝 시 수정 (그대로 유지)
+    use_enu: true
     orientation_covariance: [0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01]
     angular_velocity_covariance: [0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01]
     linear_acceleration_covariance: [0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01]
@@ -147,11 +133,11 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```bash
 source ~/vn_ws/install/setup.bash
 
-# 런치 파일 실행 (파라미터 파일 지정)
+# 런치 파일 실행 (`vectornav.yaml` 파라미터 사용)
 ros2 launch vectornav vectornav.launch.py
 ```
 새로운 터미널을 열고 다음을 실행해 데이터를 확인하세요.
 ```bash
 # IMU 데이터 확인
-ros2 topic echo /vectornav/imu
+ros2 topic echo /vectornav/imu_uncompensated
 ```
