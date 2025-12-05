@@ -3,12 +3,12 @@ Gemini 3로 작성되었습니다.
 
 **참고:** https://github.com/dawonn/vectornav/tree/ros2
 
-### ⚠️ 개발환경
+## ⚠️ 개발환경
 **HW:** Vectornav-100T
 
 **환경:** Ubuntu 22.04 + ROS2 Humble
 
-### 💻 하드웨어 설정 (USB 권한 및 Latency 설정)
+## 💻 하드웨어 설정 (USB 권한 및 Latency 설정)
 IMU 데이터는 고속으로 들어오기 때문에 리눅스의 시리얼 포트 설정이 매우 중요합니다.
 
 **▶ 사용자 권한 설정 (USB 접근 허용):**
@@ -39,7 +39,7 @@ SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", MODE="0666"
 sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
-### 📁 워크스페이스 생성 및 드라이버 다운로드
+## 📁 워크스페이스 생성 및 드라이버 다운로드
 **▶ 워크스페이스 생성 및 소스 다운로드:**
 ```bash
 # 1. 워크스페이스 생성
